@@ -50,7 +50,7 @@ void WCSimRootOptions::PopulateFileVersion()
   int dont_have_git = system(command.c_str());  // returns 0 if we *do* have git
   if(dont_have_git) return;
 
-  std::cout<<"Attempting to fetch git head commit hash"<<std::endl;
+  /*std::cout<<"Attempting to fetch git head commit hash"<<std::endl;
   // if we have a branch checked out then 'cat ${WCSIMDIR}/.git/HEAD' returns "ref: refs/heads/branchname"
   // the commit hash is then stored in ${WCSIMDIR}/.git/refs/heads/branchname
   // if we have a detached head, then 'cat ${WCSIMDIR}/.git/HEAD' returns the commit hash directly.
@@ -109,7 +109,7 @@ void WCSimRootOptions::PopulateFileVersion()
     std::cerr<<"    WCSimRootOptions::CommitHash WILL NOT BE ACCURATE!"<<std::endl;
     std::cerr<<"       PLEASE COMMIT YOUR CHANGES AND REBUILD"<<std::endl;
     std::cerr<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "<<std::endl;
-  }
+  }*/
 }
 
 //______________________________________________________________________________
