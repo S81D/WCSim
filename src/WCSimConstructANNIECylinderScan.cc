@@ -271,8 +271,8 @@ G4cout<< " placing logicWCPMT: "<< thepmtname<< " at " << atankcollection << G4e
 		G4LogicalVolume *logicWCPMT = logicWCPMTs.at(pmt_type);
 		//G4RotationMatrix *tilt_pmt_rot = tilted_pmt_rotation_matrices.at(panel_nr); 
 		G4RotationMatrix *tilt_pmt_rot = new G4RotationMatrix(*pmt_rotation_matrices.at(panel_nr));
-		G4cout << "Read in PMT "<<PMTID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<", Tilt angle: "<<pmt_tilt_angle<<G4endl;
-		tilt_pmt_rot->rotateY(-pmt_tilt_angle * deg);
+		//G4cout << "Read in PMT "<<PMTID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<", Tilt angle: "<<pmt_tilt_angle<<G4endl;
+		tilt_pmt_rot->rotateY(-pmt_tilt_angle * deg);   // apply PMT tilt rotation
 		G4RotationMatrix *pmt_rot = pmt_rotation_matrices.at(panel_nr);
 		pmt_x_shift = pmt_x*cm;
 		pmt_y_shift = (168.1-pmt_z)*cm;
@@ -283,6 +283,7 @@ G4cout<< " placing logicWCPMT: "<< thepmtname<< " at " << atankcollection << G4e
 		G4ThreeVector PMTPosition(pmt_x_shift,pmt_y_shift,pmt_z_shift);
 		G4ThreeVector PMTPosition_tilt(pmt_x_shift,pmt_y_shift,tilt_pmt_z_shift);
 
+		// only rotate the affected PMTs (ignore Top, Bottom, and ANNIE Hamamatsu PMTs)
 		if ((pmt_type == 3)||(pmt_type == 0 && panel_nr != 0)){
 		G4VPhysicalVolume *physicalWCPMT = new G4PVPlacement(tilt_pmt_rot,	//its rotation
 															PMTPosition_tilt,		//its position
