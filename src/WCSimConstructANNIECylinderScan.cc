@@ -261,34 +261,18 @@ G4cout<< " placing logicWCPMT: "<< thepmtname<< " at " << atankcollection << G4e
 	double pmt_x, pmt_y, pmt_z, pmt_dirx, pmt_diry, pmt_dirz;
 	double pmt_x_shift, pmt_y_shift, pmt_z_shift;
 	double tilt_pmt_x_shift, tilt_pmt_y_shift, tilt_pmt_z_shift;
+    double pmt_tilt_angle;
 	int panel_nr, pmt_type;
 	int PMTID;
 
-	// Read in file with measured PMT tilt angles
-	std::ifstream tilt_file("PMT_tilts.txt");
-	std::map<int, double> pmt_tilt_map;
-	int tilt_id;
-	double tilt_angle;
-	while (tilt_file >> tilt_id >> tilt_angle) {
-		pmt_tilt_map[tilt_id] = tilt_angle;
-	}
-	tilt_file.close();
-
 	while (!pmt_position_file.eof()){
-		pmt_position_file >> PMTID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type;
+		pmt_position_file >> PMTID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type >> pmt_tilt_angle;
 		if (pmt_position_file.eof()) break;
-		//G4cout << "Read in PMT "<<PMTID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<G4endl;
 		G4LogicalVolume *logicWCPMT = logicWCPMTs.at(pmt_type);
 		//G4RotationMatrix *tilt_pmt_rot = tilted_pmt_rotation_matrices.at(panel_nr); 
 		G4RotationMatrix *tilt_pmt_rot = new G4RotationMatrix(*pmt_rotation_matrices.at(panel_nr));
-		auto tilt_entry = pmt_tilt_map.find(PMTID);
-		if (tilt_entry != pmt_tilt_map.end()) {
-			double tilt_deg = tilt_entry->second;
-			tilt_pmt_rot->rotateY(-tilt_deg * deg);
-		} else {
-			// fall back to default tilt (if needed)
-			tilt_pmt_rot->rotateY(-53.0 * deg);
-		}
+		G4cout << "Read in PMT "<<PMTID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<", Tilt angle: "<<pmt_tilt_angle<<G4endl;
+		tilt_pmt_rot->rotateY(-pmt_tilt_angle * deg);
 		G4RotationMatrix *pmt_rot = pmt_rotation_matrices.at(panel_nr);
 		pmt_x_shift = pmt_x*cm;
 		pmt_y_shift = (168.1-pmt_z)*cm;
