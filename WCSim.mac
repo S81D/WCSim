@@ -1,128 +1,29 @@
-#!/bin/sh 
-# Sample setup macro with no visualization
+#!/bin/sh
 
-/run/verbose 0
+/run/verbose 1
 /tracking/verbose 0
 /hits/verbose 0
 /process/em/verbose 0
-#/process/had/particle_hp/verbose 0
 /process/had/cascade/verbose 0
 /process/verbose 0
 /process/setVerbose 0
 /run/initialize
 /vis/disable
 
-## select the geometry
-# Default config if you do nothing is currently SuperK
-#
-# The tube size is fixed for SK to 20"
-# These are fixed geometries for validation
-#/WCSim/WCgeom SuperK
-#/WCSim/Construct
-
-# Some other SuperK options:
-#/WCSim/WCgeom SuperK_20inchPMT_20perCent # Note: the actual coverage is 20.27%
-#/WCSim/WCgeom SuperK_20inchBandL_20perCent # Note: the actual coverage is 20.27%
-#/WCSim/WCgeom SuperK_12inchBandL_15perCent # Note: the actual coverage is 14.59%
-#/WCSim/WCgeom SuperK_20inchBandL_14perCent # Note: the actual coverage is 13.51%
-
-# HyperK (one cylindrical tank with a height of 54.8 m, a diameter of 70.8 m and 40% coverage with 20" B&L PMTs)
-#/WCSim/WCgeom HyperK
-#/WCSim/Construct 
-
-# Cylindrical detector with a height of 60 m and a diameter of 74 m
-#/WCSim/WCgeom Cylinder_60x74_20inchBandL_14perCent # Note: the actual coverage is 13.51%
-#/WCSim/WCgeom Cylinder_60x74_20inchBandL_40perCent
-#/WCSim/Construct 
-
-# Generic cylindrical detector with a height of 100m and a 
-# diameter of 69m with 12" HPD and 14.59% photocoverage
-#/WCSim/WCgeom Cylinder_12inchHPD_15perCent # Note: the actual coverage is 14.59%
-#/WCSim/Construct
-
-# Previous, egg-shaped HyperK design:
-#/WCSim/WCgeom EggShapedHyperK #default length is 49500 mm unless changed in /WCSim/HK/waterTankLength below.
-#/WCSim/WCgeom EggShapedHyperK_withHPD #default length is 49500 mm unless changed in /WCSim/HK/waterTankLength below.
-#/WCSim/Construct 
-
-#Changes the length of the simulated volume. Is currently only set up for the egg-shaped HyperK design.
-#/WCSim/EggShapedHyperK/waterTank_Length 24750. mm # Equivalent length for 10 partitions
-#/WCSim/EggShapedHyperK/waterTank_Length 49500. mm # Equivalent length for 5 partitions (default)
-#/WCSim/EggShapedHyperK/waterTank_Length 61875. mm # Equivalent length for 4 partitions
-#/WCSim/EggShapedHyperK/waterTank_Length 82500. mm # Equivalent length for 3 partitions
-#/WCSim/EggShapedHyperK/waterTank_Length 123750. mm # Equivalent length for 2 partitions
-#/WCSim/EggShapedHyperK/waterTank_Length 247500. mm # Equivalent length for 1 partition
-#/WCSim/Construct 
-
-# switch geometry to ANNIE
-#/WCSim/WCgeom ANNIEp2   ## version with 200 PMTs and 200 LAPPDs
-#/WCSim/WCgeom ANNIEp2v2  ## version with realistic PMT content, no LAPPDs <<< it's already called by default
-#/WCSim/Construct 
-
-# Surface detector
-#/WCSim/WCgeom Cylinder
-#/WCSim/Cylinder/cylinderTank_Height 14. m
-#/WCSim/Cylinder/cylinderTank_Diameter 8. m
-#/WCSim/Cylinder/cylinderTank_Coverage 30.
-#/WCSim/Cylinder/cylinderTank_PMTType PMT8inch
-#/WCSim/Construct # This must be uncommented in order to construct a new detector configuration.
-
-#Added for the PMT QE option 08/17/10 (XQ)
-# 1. Stacking only mean when the photon is generated
-# the QE is applied to reduce the total number of photons
-# 2. Stacking and sensitivity detector
-# In the stacking part, the maximum QE is applied to reduce
-# the total number of photons
-# On the detector side, the rest of QE are applied according to QE/QE_max
-# distribution. This option is in particular important for the WLS
-# 3. The last option means all the QE are applied at the detector
-# Good for the low energy running.
-#/WCSim/PMTQEMethod     Stacking_Only
+# QE Stacking
 /WCSim/PMTQEMethod      Multi_Tank_Types
-#/WCSim/LAPPDQEMethod   Stacking_Only
 /WCSim/LAPPDQEMethod    Multi_Tank_Types
-#/WCSim/PMTQEMethod     Stacking_And_SensitiveDetector
-#/WCSim/PMTQEMethod     SensitiveDetector_Only
 
 #turn on or off the collection efficiency
 /WCSim/PMTCollEff on
 
 # command to choose save or not save the pi0 info 07/03/10 (XQ)
-/WCSim/SavePi0 true
-
-## select the input nuance-formatted vector file
-## you can of course use your own
-#/mygen/generator muline
-#/mygen/vecfile inputvectorfile
-#/mygen/vecfile h2o.2km.001-009x3_G4.kin
-#/mygen/vecfile mu+.out
+/WCSim/SavePi0 false
 
 #grab the DAQ options (digitizer type, thresholds, timing windows, etc.)
 /control/execute macros/annie_daq.mac
 
-
-# default dark noise frequency (and conversion factor) is PMT property (NEW), set in the code.
-# Below gives possibility to overwrite nominal values, eg. to switch OFF the Dark Noise.
-#/DarkRate/SetDetectorElement tank	# NEED TO SPECIFY DETECTOR ELEMENT FIRST
-#/DarkRate/SetDarkRate 0 kHz   #Turn dark noise off
-#/DarkRate/SetDarkRate 4.2 kHz #This is the value for SKI set in SKDETSIM.
-#/DarkRate/SetDarkRate 8.4 kHz #For 20 inch HPDs and Box and Line PMTs, based on High QE 20" R3600 dark rate from EGADS nov 2014
-#/DarkRate/SetDarkRate 3.0 kHz #For 12 inch HPDs and Box and Line PMTs, based on High QE 20" R3600 dark rate from EGADS nov 2014
-
-# command to multiply the dark rate.
-# Convert dark noise frequency before digitization to after digitization by setting suitable factor
-# Again, this is now a PMT property and can be overridden here
-#/DarkRate/SetDetectorElement tank	# NEED TO SPECIFY DETECTOR ELEMENT FIRST
-#/DarkRate/SetConvert 1.367  #For Normal PMT
-#/DarkRate/SetConvert 1.119 #For HPDs
-#/DarkRate/SetConvert 1.126 #For Box and Line PMTs
-
 # Select which time window(s) to add dark noise to
-#/DarkRate/SetDarkMode 0 to add dark noise to a time window starting at
-#/DarkRate/SetDarkLow to /DarkRate/SetDarkHigh [time in ns]
-#/DarkRate/SetDarkMode 1 adds dark noise hits to a window of
-#width /DarkRate/SetDarkWindow [time in ns] around each hit
-#i.e. hit time ± (/DarkRate/SetDarkWindow) / 2
 /DarkRate/SetDetectorElement tank
 /DarkRate/SetDarkMode 1
 /DarkRate/SetDarkHigh 100000
@@ -138,332 +39,18 @@
 /DarkRate/SetDetectorElement facc
 /DarkRate/SetDarkMode 1
 /DarkRate/SetDarkHigh 100000
-/DarkRate/SetDarkLow 0
-/DarkRate/SetDarkWindow 4000
 
-
-#Uncomment one of the lines below if you want to use the OGLSX or RayTracer visualizer
-#/control/execute macros/visOGLSX.mac
-#/control/execute macros/visRayTracer.mac
-
-#####################################
-## PRIMARY SOURCES
-#####################################
-
-## Genie beam events
-####################
-/mygen/generator beam	# retrieve input primaries from GENIE output files
-
-## Simple electron gun at WCSim origin using G4 Particle Gun
-#############################################################
-# Or you can use the G4 Particle Gun
-# for a full list of /gun/ commands see:
-# http://geant4.web.cern.ch/geant4/G4UsersDocuments/UsersGuides/ForApplicationDeveloper/html/Control/UIcommands/_gun_.html
-#/mygen/generator gun
-#/gun/particle e-
-##/gun/particle pi0
-#/gun/energy 500 MeV
-#/gun/direction 1 0 0 
-#/gun/position 0 0 0  
-
-## Simple electron gun at WCSim origin, using G4 GPS
-####################################################
-# Or you can use the G4 General Particle Source
-# you can do a lot more with this than a monoenergetic, monodirectional, single-particle gun
-# for a full list of /gps/ commands see:
-# https://geant4.web.cern.ch/geant4/UserDocumentation/UsersGuides/ForApplicationDeveloper/html/ch02s07.html
-#/mygen/generator gps
-#/gps/particle e-
-#/gps/energy 500 MeV
-#/gps/direction 1 0 0
-#/gps/position 0 0 0
-
-## Optical photon gun in MRD paddle to test reflections
-########################################################
-#/mygen/generator gun
-#/gun/particle opticalphoton
-#/gun/energy 3 eV
-#/gun/polarization 0.7 0.4 0.2
-#/gun/direction 0.3782 0.02 0.2
-##in an mrd scintillator paddle
-##/gun/position 10 10 4695 mm
-##in a veto scintillator paddle
-#/gun/position 50 50 30 mm
-##/tracking/verbose 13
-#/vis/scene/add/trajectories smooth
-#/vis/scene/endOfEventAction accumulate
-#/vis/viewer/set/viewpointThetaPhi 0 0
-#/vis/viewer/zoom 2
-#/vis/modeling/trajectories/create/drawByParticleID
-#/vis/modeling/trajectories/drawByParticleID-0/set opticalphoton red
-##note that the trajectory must be created and stored by creating a new trajectory,
-##then invoking 
-##  currentTrajectory->SetSaveFlag(false);
-##  fpTrackingManager->SetTrajectory(currentTrajectory);
-##  fpTrackingManager->SetStoreTrajectory(false);
-##in WCSimTrackingAction
-
-## Electron gun in MRD paddle to test scintillation
-###################################################
-# Use a muon gun for testing scintillator elements
-#/mygen/generator gun
-#/gun/particle mu-
-#/gun/energy 5 GeV
-#/gun/direction 0 0 1
-#/gun/position 50 50 -500 mm
-
-## Simulating CC1Pi events
-###################################################
-## Use a muon gun for testing scintillator elements
-#/mygen/generator gps
-#/gps/source/intensity 1
-#/gps/particle mu-
-#/gps/energy 500 MeV
-#/gps/direction 0 0 1
-#/gps/pos/centre 0 -14.46 168.1 cm
-#/gps/source/add 1
-#/gps/particle pi+
-#/gps/energy 200 MeV
-#/gps/ang/type iso
-#/gps/pos/centre 0 -14.46 168.1 cm
-## generate both particles in every event; don't randomly choose
-#/gps/source/multiplevertex true
-
-## Isotropic electron swarm within tank for Bonsai training
-############################################################
-# use laser for bonsai 
-# This is equivalent to the gps command, (except that the gps particle energies are saved ignoring their mass)<< not true:
-# masses are included for bonsai, which uses laser source with e-...  for photons the mass will be 0 anyway! 
-# is there any point keeping both?
-# for a full list of /gps/ commands see:
-# https://geant4.web.cern.ch/geant4/UserDocumentation/UsersGuides/ForApplicationDeveloper/html/ch02s07.html
-# It is also used for laser calibration simulation
-#/mygen/generator laser
-#/gps/particle e-
-##/gps/particle pi0
-#/gps/pos/type Volume
-#/gps/pos/shape Cylinder
-#/gps/pos/radius 1.5 m   # 1.524 in WCSim::DetectorConfigs
-#/gps/pos/halfz 1.95 m   # 1.98m in WCSim::DetectorConfigs
-##/gps/pos/confine WCBarrel
-##cylinders are defined with the z axis as the axis of the cylinder
-##rotate the cylinder to align with ANNIE's y-parallel tank
-#/gps/pos/rot1 1 0 0
-#/gps/pos/rot2 0 0 1
-## place source at centre of tank
-#/gps/pos/centre 0 -14.46 168.1 cm
-#/gps/ang/type iso
-##/gps/ang/mintheta 0 deg
-##/gps/ang/maxtheta 30 deg
-##/gps/ang/minphi 0 deg
-##/gps/ang/maxphi 360 deg
-#/gps/energy 10 MeV
-##/gps/energy 2.505 eV   # optical photon energies for laser calibration
-#/gps/ene/type Mono
-#/gps/ene/gradient 0
-#/gps/ene/intercept 1
-## disable adjusting NDigits trigger for average occupancy, since noise is disabled for Bonsai
-#/DAQ/TriggerNDigits/AdjustForNoise false
-## disable dark noise for bonsai. Need to set detectorelement first!
-#/DarkRate/SetDetectorElement tank
-#/DarkRate/SetDarkRate 0 kHz
-## shouldn't be necessary - bonsai only looks at tank events...
-#/DarkRate/SetDetectorElement mrd
-#/DarkRate/SetDarkRate 0 kHz
-#/DarkRate/SetDetectorElement facc
-#/DarkRate/SetDarkRate 0 kHz
-
-## Optical photon bomb within tank to test light yield
-######################################################
-### opticalphoton bomb: we can use the laser source, just need to setnumberofparticles > 1!
-#/mygen/generator laser
-#/gps/particle opticalphoton
-#/gps/number 1000
-## place bomb at centre of tank
-#/gps/pos/centre 0 -14.46487518 168.1 cm
-#/gps/ang/type iso
-## energy equivalent to 430nm
-#/gps/energy 2.883353 eV
-#/gps/ene/type Mono
-#/gps/ene/gradient 0
-#/gps/ene/intercept 1
-
-## Muons shot into the MRD for track / energy vs depth estimation
-#################################################################
-## muon events from just before the front face of the MRD, 
-## used to establish range vs energy at various angles of entry
-#/mygen/generator gps
-#/gps/particle mu-
-#/gps/pos/type Plane
-#/gps/pos/shape Rectangle
-#/gps/pos/halfx 10 cm  # have a 20cm*20cm plane, so we have a little variation in entry point, but aren't too close to edges
-#/gps/pos/halfy 10 cm  # note we end up rotating the plane of 
-## place source at centre of tank in x/y, but on the front face of the MRD in z
-#/gps/pos/centre 0 -14.46 324.5 cm   # MRD front face at z=325.5cm
-##planes are oriented in the x-y plane, so we need to rotate in the same way as per the cylinder
-##rotate the square be parallel to the front face of the MRD (not true??)
-##/gps/pos/rot1 1 0 0
-##/gps/pos/rot2 0 0 1
-##to generate a 10 deg cone of equally likely directions about the z axis, use the following
-## see http://nngroup.physics.sunysb.edu/captain/reference/master/detSim/dox/detSimGPS.html for details
-#/gps/ang/type iso
-##/gps/ang/mintheta 10 deg  # limit to a 10 degree cone in +z dir
-#/gps/ang/mintheta 90 deg   # limit to positive z directions(!)
-#/gps/ene/type Lin    # uniform energy spread
-#/gps/ene/gradient 0  # gradient 0 means probability distrib is flat: all energies in range are equally likely
-#/gps/ene/intercept 1
-##The gradient is specified in MeV^{-1}. The intercept is a pure number.
-#/gps/ene/min 100 MeV
-#/gps/ene/max 2500 MeV
-#/DAQ/Trigger NoTrigger  # >>>DISABLE NDigits TRIGGER<<< and enable NoTrigger to records everything even w/o a tank event
-
-## Muons shot into the tank from in front of the veto, gaussian energy and beam spread
-#################################################################
-#/mygen/generator gps
-#/gps/particle mu- #geantino
-#/gps/pos/type Plane
-#/gps/pos/shape Rectangle
-#/gps/pos/halfx 1.524 m  # tank radius
-#/gps/pos/halfy 1.98 m   # tank height 
-## place plane centre in front of veto
-#/gps/pos/centre 0 -14.46 -10 cm   # MRD front face at z=325.5cm
-##planes are oriented in the x-y plane, so we need to rotate in the same way as per the cylinder
-##rotate the square be parallel to the front face of the MRD (not true??)
-#/gps/pos/rot1 1 0 0
-#/gps/pos/rot2 0 1 0
-## a gaussian energy spread
-#/gps/ang/type beam1d
-#/gps/ang/sigma_r 35 deg
-##/gps/ang/focuspoint  0 -14.46 -20000 cm  ## generates all particles with momentum TOWARD that point
-#/gps/ang/rot1 -1 0 0      # direction is defined by defining the PERPENDICULAR NORMAL PLANE
-#/gps/ang/rot2 0 1 0
-## gaussian energy spread
-#/gps/ene/type Gauss
-#/gps/ene/mono 500 MeV    # gaussian centre
-#/gps/ene/sigma 400 MeV   # gaussian width
-#/gps/ene/min 10 MeV      # add a minimum because anything <50MeV is undetectable
-
-## Thermal neutron gun, to test for neutron capture detection
-#############################################################
-## thermal neutron gun
-#/mygen/generator laser
-#/gps/particle neutron
-#/gps/pos/type Volume
-#/gps/pos/shape Cylinder
-#/gps/pos/radius 0.5 m
-#/gps/pos/halfz 0.5 m
-##cylinders are defined with the z axis as the axis of the cylinder
-##rotate the cylinder to align with ANNIE's y-parallel tank
-#/gps/pos/rot1 1 0 0
-#/gps/pos/rot2 0 0 1
-## place source at centre of tank
-#/gps/pos/centre 0 -14.46 168.1 cm
-#/gps/ang/type iso
-##/gps/ang/mintheta 0 deg
-##/gps/ang/maxtheta 30 deg
-##/gps/ang/minphi 0 deg
-##/gps/ang/maxphi 360 deg
-#/gps/energy 0.025 eV #thermal neutrons
-#/gps/ene/type Mono
-#/gps/ene/gradient 0
-#/gps/ene/intercept 1
-## disable adjusting NDigits trigger for average occupancy, since noise is disabled for Bonsai
-#/DAQ/TriggerNDigits/AdjustForNoise false
-
-## Isotropic muons with linear spread of energies, within the tank, for E reconstruction
-########################################################################################
-## isotropic distribution may be better for energy reconstruction tests?
-#/mygen/generator laser
-#/gps/particle mu-
-##/gps/particle pi0
-#/gps/pos/type Volume
-#/gps/pos/shape Cylinder
-#/gps/pos/radius 1.5 m   # 1.524 in WCSim::DetectorConfigs
-#/gps/pos/halfz 1.97 m   # 1.98m in WCSim::DetectorConfigs
-##cylinders are defined with the z axis as the axis of the cylinder
-##rotate the cylinder to align with ANNIE's y-parallel tank
-#/gps/pos/rot1 1 0 0
-#/gps/pos/rot2 0 0 1
-## place source at centre of tank
-#/gps/pos/centre 0 -14.46 168.1 cm
-#/gps/ang/type iso
-#/gps/ene/type Lin    # uniform energy spread
-#/gps/ene/gradient 0  # gradient (MeV^{-1}) = 0: all energies equally likely
-#/gps/ene/intercept 1 # The intercept is a pure number.
-#/gps/ene/min 100 MeV
-#/gps/ene/max 2500 MeV
-##/DAQ/Trigger NDigits # normal NDigits 'cut' left on
-
-## Beam muon simulation - gaussian spread of energies and directions (XXX ANGULAR DISTRIBUTION INCORRECT? Use ver above XXX)
-####################################################################
-## muons with gaussian spread of ~beam energies, starting in the tank, shot into the mrd with ~suitable angles.
-#/mygen/generator laser
-#/gps/particle mu-
-#/gps/pos/type Volume
-#/gps/pos/shape Cylinder
-#/gps/pos/radius 1.5 m   # 1.524 in WCSim::DetectorConfigs
-#/gps/pos/halfz 1.97 m   # 1.98m in WCSim::DetectorConfigs
-##/gps/pos/confine WCBarrel
-## to generate a 10 deg cone of equally likely directions about the z axis, we can use an isotropic directionality
-## source but limit the angular span using the following
-## see http://nngroup.physics.sunysb.edu/captain/reference/master/detSim/dox/detSimGPS.html for details
-##/gps/ang/type iso
-##/gps/ang/mintheta 10 deg  # limit to a 10 degree cone in +z dir
-#/gps/ang/mintheta 90 deg   # limit to positive z directions(!) <<< this may have no effect on gaussian beam distribution
-## perhaps more suitable is a gaussian spread of directions about a beam direction:
-#/gps/ang/type beam1d
-#/gps/ang/sigma_r 35 deg
-#/gps/ang/focuspoint  0 -14.46 168.1 cm
-## fix roational alignment if necessary
-## The X axis of the direction coordinate system is defined by the /gps/ang/rot1 command
-## and the XY plane is determined by the /gps/ang/rot2 command
-## the following pair results in particles along the Z direction (in theory flips Z->-Z?)
-#/gps/ang/rot1 -1 0 0
-#/gps/ang/rot2 0 1 0
-## uniform energy spread... 
-##/gps/ene/type Lin    # uniform energy spread
-##/gps/ene/gradient 0  # gradient 0 means probability distrib is flat: all energies in range are equally likely
-##/gps/ene/intercept 1
-## The gradient is specified in MeV^{-1}. The intercept is a pure number.
-##/gps/ene/min 100 MeV
-##/gps/ene/max 2500 MeV
-## a gaussian energy spread is better
-#/gps/ene/type Gauss
-#/gps/ene/mono 500 MeV   # gaussian centre
-#/gps/ene/sigma 400 MeV # gaussian width
-#/gps/ene/min 10 MeV      # add a minimum because anything <50MeV is undetectable
-
-##################################
-## END OF PRIMARY SOURCES
-##################################
-
-# set up visualization view for debugging photons - 
-# should be associated with changes store in branch photonbouncedebug
-#/vis/viewer/set/viewpointThetaPhi 0 0
-#/vis/viewer/zoom 2
-# this has no discernable effect - being overridden by PreUserTrackingAction
-#/tracking/storeTrajectory 0
-## disable automatic drawing of some trajectories at end of event
-#/vis/scene/activateModel G4TrajectoriesModel false 
-## now only tracks explicitly drawn in the EndOfEventAction will be shown
 
 # set the random seed
-#/WCSim/random/seed 52878        #default 31415. Now set in setRandomParameters.mac
 /control/execute macros/setRandomParameters.mac
-# set the offset from the start of the tchain at which to start reading primaries in
-#/mygen/primariesoffset 10000    # Now set in primaries_directory.mac << automatically called in WCSim.cc
 
-## change the name of the output root file, default = wcsim (the .root is appended internally)
+## GENIE World
+#######################################
+/mygen/generator beam
+################################
+
 /WCSimIO/RootFile wcsim
-#/WCSimIO/RootFile ANNIEtest_10MeV_Uni_Iso  # for bonsai
-#/WCSimIO/RootFile ANNIEtest_MRD_muon_sample  # for MRD range vs energy estimation
-#/WCSimIO/RootFile wcsim_Muon_Tank_Sample_killed # for measuring # digits vs energy loss in tank
 
-/run/beamOn 1000
-# should run 10000 events for bonsai
+/run/beamOn 20000
 
-#exit
-
-# for some reason this command works on my laptop and on the grid, but is not found on gpvm and aborts
-# execution of the macro. Stick it at the end - if it aborts, nothing else to do.
-#/process/had/particle_hp/verbose 0
+exit
