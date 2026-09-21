@@ -43,6 +43,7 @@ private:
   G4UIcmdWithADouble* Qeratio;
   G4UIcmdWithADouble* QeratioWB;
   G4UIcmdWithABool *PMTwiseQE;
+  G4UIcmdWithABool *PMTTilt;
 
   //RATPAC comparison commands
   G4UIcmdWithABool* MaterialRAT;

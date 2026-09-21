@@ -82,6 +82,11 @@ WCSimTuningMessenger::WCSimTuningMessenger(WCSimTuningParameters* WCTuningPars):
   PMTwiseQE->SetParameterName("PMTwiseQE",true);
   PMTwiseQE->SetDefaultValue(0);
 
+  PMTTilt = new G4UIcmdWithABool("/WCSim/tuning/PMTtilt",this);
+  PMTTilt->SetGuidance("Turn on/off the individual PMT tilts (read from PMTPositions_Scan.txt)");
+  PMTTilt->SetParameterName("PMTTilt",true);
+  PMTTilt->SetDefaultValue(0);
+
   //jl145 - for Top Veto
   TVSpacing = new G4UIcmdWithADouble("/WCSim/tuning/tvspacing",this);
   TVSpacing->SetGuidance("Set the Top Veto PMT Spacing, in cm.");
@@ -121,6 +126,7 @@ WCSimTuningMessenger::~WCSimTuningMessenger()
   delete Qeratio;
   delete QeratioWB;
   delete PMTwiseQE;
+  delete PMTTilt;
 
 
   //Dedicated tuning variables for ratpac comparisons
@@ -272,6 +278,15 @@ void WCSimTuningMessenger::SetNewValue(G4UIcommand* command,G4String newValue)
        printf("Turning PMT-wise QE tuning On\n");
      else
        printf("Turning PMT-wise QE tuning Off\n");
+   }
+
+  // ANNIE - Individual PMT tilts
+  else if (command == PMTTilt){
+     WCSimTuningParams->SetPMTTilt(PMTTilt->GetNewBoolValue(newValue));
+     if (PMTTilt->GetNewBoolValue(newValue))
+       printf("Turning individual PMT tilts On\n");
+     else
+       printf("Turning individual PMT tilts Off\n");
    }
 
 

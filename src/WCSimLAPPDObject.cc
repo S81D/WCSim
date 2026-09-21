@@ -231,14 +231,19 @@ G4float* LAPPD::GetQEWavelength(){
   //static G4float wavelength_value[20] = { 280., 300., 320., 340., 360., 380., 400., 420., 440., 460., 480., 500., 520., 540., 560., 580., 600., 620., 640., 660.};
 
   // wavelength bin for LAPPD 25 for 40
+  // Note: GetLAPPDQE() returns 0 below 280 nm, and also above the last bin here (600 nm),
+  // so with this table the effective LAPPD QE range is 280-600 nm (was 280-660 nm)
   static G4float wavelength_value[20] = {220., 240., 260., 280., 300., 320., 340., 360., 380., 400., 420., 440., 460., 480., 500., 520., 540., 560., 580., 600.};
   //static G4float wavelength_value[20] = {280., 300., 320., 340., 360., 380., 400., 420., 440., 460., 480., 500., 520., 540., 560., 580., 600.,  620., 640., 660.};
 
   return wavelength_value;
 }
 
-G4float* LAPPD::GetQE(){  
+G4float* LAPPD::GetQE(){
 // new data from LAPPD 25 for 40
+// The measured QE of LAPPD 25 is used as a stand-in for LAPPD 40.
+// It replaces the "QE @ 19 Celsius" estimate below and only changes the LAPPD response;
+// the PMT QE tables (WCSimPMTObject.cc) are separate and unaffected.
 static G4float QE[20] = {0.02937435, 0.06062565, 0.09187696 , 0.12312826  ,  0.15437956  , 0.18471379  , 0.21641814 , 0.2428098   , 0.24469183 , 0.22234098  ,  0.207122    ,0.19884722  ,  0.17932031  ,  0.14470496  ,0.1113269  ,   0.09028386  ,  0.07672619  ,0.06275337  , 0.05160584 ,  0.03901694};
 //
 
@@ -258,6 +263,10 @@ return QE;
 }
 G4float LAPPD::GetmaxQE(){
 
+  // Must be >= the largest value in the QE table above (0.2447; the old 0.15 was only valid for the old table).
+  // Only used with /WCSim/LAPPDQEMethod Stacking_And_SensitiveDetector: with Multi_Tank_Types (WCSim.mac)
+  // LAPPD hits are normalised to the PMT stacking maxQE instead, so this value has no effect there.
+  // Kept as a constant to match the v2.1.0-ANNIE production (computing it from the table would give 0.2447).
   const G4float maxQE = 0.25; //for LAPPDs //0.211; if for PMTs
 
   return maxQE;

@@ -1010,6 +1010,12 @@ void WCSimDetectorConstruction::SetANNIEPhase2Geometryv7()
   // LAPPDs at octagon corners
   WCLAPPDperCellHorizontal= 1;        // 1 LAPPD on each octagon face (corner)
   WCLAPPDperCellVertical  = 3;        // 3 rings of LAPPDs
+  // LAPPD layout from Yue's LAPPD updates
+  WCLAPPDVerticalSpacing  = 550.*mm;  // rows at WCLAPPDCentreRowZ + (row-1)*WCLAPPDVerticalSpacing
+  WCLAPPDCentreRowZ       = -119.2*mm;
+  // Only 5 of the 8 faces x 3 rows = 24 slots hold an LAPPD. Slot copy number = row + face*WCLAPPDperCellVertical:
+  // face 3 (rows 0,2), face 4 (row 1), face 5 (rows 0,2)
+  WCLAPPDInstalledIDs     = {9, 11, 13, 15, 17};
 }
 
 void WCSimDetectorConstruction::SetSuperKGeometry()

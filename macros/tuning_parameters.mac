@@ -21,6 +21,10 @@
 #Turning PMT-wise Q.E. on (1) or off (0)
 /WCSim/tuning/PMTwiseQE 0
 
+#Turning individual PMT tilts on (1) or off (0)
+#Tilt angles [deg] are read from the last column of PMTPositions_Scan.txt
+/WCSim/tuning/PMTtilt 0
+
 # Parameters to set up Top Veto - jl145
 # Set to "1" to turn on top veto.
 /WCSim/tuning/topveto 0

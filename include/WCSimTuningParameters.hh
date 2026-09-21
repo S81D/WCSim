@@ -55,6 +55,9 @@ public:
   G4bool GetPMTwiseQE() {return PMTWiseQE;}
   void SetPMTwiseQE(G4double pmtwiseqe) {PMTWiseQE = pmtwiseqe;}
 
+  G4bool GetPMTTilt() {return pmttilt;}
+  void SetPMTTilt(G4bool tparam) {pmttilt = tparam;}
+
 
   //For Top Veto - jl145
   G4double GetTVSpacing() {return tvspacing;}
@@ -96,6 +99,7 @@ private:
   G4double QEratio;	//Factor by which the PMT Q.E. can be scaled
   G4double QEratioWB;	//Factor by which the WB PMT Q.E. can be scaled
   G4bool PMTWiseQE;	//Should each PMT have its own Q.E. scaling?
+  G4bool pmttilt;	//Should the individual PMT tilt angles (last column of PMTPositions_Scan.txt) be applied?
 
   //RATPAC comparison variables
   G4int sim60;

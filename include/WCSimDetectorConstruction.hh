@@ -426,6 +426,10 @@ private:
   G4double WCIDDiameter;
   G4double WCLAPPDSliderThickness;
 
+  G4double WCLAPPDVerticalSpacing;          // vertical distance between LAPPD rows
+  G4double WCLAPPDCentreRowZ;               // z position of the central LAPPD row
+  std::vector<G4int> WCLAPPDInstalledIDs;   // copy numbers of the LAPPD slots that hold an LAPPD
+
   G4double WCCapLength;
   G4double WCBackODLength;
   G4double WCFrontODLength;

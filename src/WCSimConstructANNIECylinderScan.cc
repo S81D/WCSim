@@ -35,6 +35,7 @@
 #include "WCSimTuningParameters.hh" //jl145
 
 #include <fstream>
+#include <algorithm>
 
 /***********************************************************
  *
@@ -231,66 +232,59 @@ G4LogicalVolume* WCSimDetectorConstruction::ConstructANNIECylinderScan()
 	
 	// Create rotation matrices for the orientations of the PMTs
 	std::vector<G4RotationMatrix*> pmt_rotation_matrices;
-	std::vector<G4RotationMatrix*> tilted_pmt_rotation_matrices;
 	// Bottom PMTs have panel number 0
 	G4RotationMatrix *WCBottomCapRotation = new G4RotationMatrix();
 	pmt_rotation_matrices.push_back(WCBottomCapRotation);
-	tilted_pmt_rotation_matrices.push_back(WCBottomCapRotation);
 	// Barrel PMTs have panel numbers 1-8
 	for(int facei=0; facei<WCBarrelRingNPhi; facei++){
 		G4RotationMatrix* WCPMTRotationNext = new G4RotationMatrix(*WCPMTRotation);
-		G4RotationMatrix* WCPMTtiltRotationNext = new G4RotationMatrix(*WCPMTRotation);
 		WCPMTRotationNext->rotateX((dPhi*facei)-67.5*deg+180*deg);
-		WCPMTtiltRotationNext->rotateX((dPhi*facei)-67.5*deg+180*deg);
-		WCPMTtiltRotationNext->rotateY(-53*deg);
 		pmt_rotation_matrices.push_back(WCPMTRotationNext);
-		tilted_pmt_rotation_matrices.push_back(WCPMTtiltRotationNext);
 	}
 	// Top PMTs have panel number 9
 	G4RotationMatrix *WCTopCapRotation = new G4RotationMatrix();
 	WCTopCapRotation->rotateY(180.*deg);
 	pmt_rotation_matrices.push_back(WCTopCapRotation);
-	tilted_pmt_rotation_matrices.push_back(WCTopCapRotation);
 
 	G4cout <<"Size of pmt_rotation_matrices: "<<pmt_rotation_matrices.size()<<G4endl;
+
+	// Individual PMT tilts: the tilt angle [deg] of each PMT is the last column of PMTPositions_Scan.txt
+	G4bool PMTTILT = WCSimTuningParams->GetPMTTilt();
+	G4cout <<"PMTTILT variable: "<<PMTTILT<<G4endl;
+	// Tilted PMTs are also moved up by a fixed 13.9 cm. Together with the 53 deg angles in the file this
+	// reproduces the tilt+shift geometry used in the ANNIE CC+NC production (J. Minock and S. Doran). Note the shift does
+	// NOT scale with the tilt angle, and it has only been used with 53 deg tilts.
+	const double pmt_tilt_z_shift = 13.9;	// [cm]
+	int n_tilted_pmts = 0;
 
 	// Read in file with PMT positions, create PMTs
 	std::ifstream pmt_position_file("PMTPositions_Scan.txt");
 	std::string next_pmt;
-	double pmt_x, pmt_y, pmt_z, pmt_dirx, pmt_diry, pmt_dirz;
+	double pmt_x, pmt_y, pmt_z, pmt_dirx, pmt_diry, pmt_dirz, pmt_tilt_angle;
 	double pmt_x_shift, pmt_y_shift, pmt_z_shift;
-	double tilt_pmt_x_shift, tilt_pmt_y_shift, tilt_pmt_z_shift;
-    double pmt_tilt_angle;
 	int panel_nr, pmt_type;
 	int PMTID;
-
 	while (!pmt_position_file.eof()){
 		pmt_position_file >> PMTID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type >> pmt_tilt_angle;
 		if (pmt_position_file.eof()) break;
-		G4LogicalVolume *logicWCPMT = logicWCPMTs.at(pmt_type);
-		G4RotationMatrix *tilt_pmt_rot = new G4RotationMatrix(*pmt_rotation_matrices.at(panel_nr));
 		//G4cout << "Read in PMT "<<PMTID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<", Tilt angle: "<<pmt_tilt_angle<<G4endl;
-		tilt_pmt_rot->rotateY(-pmt_tilt_angle * deg);   // apply PMT tilt rotation
+		G4LogicalVolume *logicWCPMT = logicWCPMTs.at(pmt_type);
 		G4RotationMatrix *pmt_rot = pmt_rotation_matrices.at(panel_nr);
 		pmt_x_shift = pmt_x*cm;
 		pmt_y_shift = (168.1-pmt_z)*cm;
 		pmt_z_shift = ((pmt_y+14.45))*cm;
-		tilt_pmt_z_shift = (pmt_y+14.45+13.9)*cm;
+		//pmt_z_shift = ((pmt_y+14.45)-InnerStructureCentreOffset/10.)*cm;
+
+		// Only PMTs with a non-zero angle are tilted (and shifted), so a tilt of 0 places the PMT exactly as untilted.
+		// Note: PMT holders are not tilted along with their PMT (not sure if this creates any overlap issues)
+		if (PMTTILT && pmt_tilt_angle != 0){
+			pmt_rot = new G4RotationMatrix(*pmt_rotation_matrices.at(panel_nr));
+			pmt_rot->rotateY(-pmt_tilt_angle*deg);
+			pmt_z_shift = (pmt_y+14.45+pmt_tilt_z_shift)*cm;
+			n_tilted_pmts++;
+		}
 		//G4cout <<"Edited PMT position ("<<pmt_x_shift<<","<<pmt_y_shift<<","<<pmt_z_shift<<")"<<G4endl;
 		G4ThreeVector PMTPosition(pmt_x_shift,pmt_y_shift,pmt_z_shift);
-		G4ThreeVector PMTPosition_tilt(pmt_x_shift,pmt_y_shift,tilt_pmt_z_shift);
-
-		// only rotate the affected PMTs (ignore Top, Bottom, and ANNIE Hamamatsu PMTs)
-		if ((pmt_type == 3)||(pmt_type == 0 && panel_nr != 0)){
-		G4VPhysicalVolume *physicalWCPMT = new G4PVPlacement(tilt_pmt_rot,	//its rotation
-															PMTPosition_tilt,		//its position
-															logicWCPMT,			//its logical volume
-															"WCPMT",			//its name
-															logicWCBarrel,		//its mother volume
-															false,				//no boolean operations
-															PMTID,				//ID for this PMT (=channelkey in data)
-															true);				//check overlaps*/
-		} else { 
 		G4VPhysicalVolume *physicalWCPMT = new G4PVPlacement(pmt_rot,	//its rotation
 															PMTPosition,		//its position
 															logicWCPMT,			//its logical volume
@@ -299,9 +293,9 @@ G4LogicalVolume* WCSimDetectorConstruction::ConstructANNIECylinderScan()
 															false,				//no boolean operations
 															PMTID,				//ID for this PMT (=channelkey in data)
 															true);				//check overlaps*/
-		}
 	}
 	pmt_position_file.close();
+	G4cout <<"Number of tilted PMTs: "<<n_tilted_pmts<<G4endl;
 
 	// Leave LAPPD placement in for now (?)
 	
@@ -323,18 +317,15 @@ G4LogicalVolume* WCSimDetectorConstruction::ConstructANNIECylinderScan()
 		G4double CellCentreX = WCIDRadius * sin(dPhi*facei);
 		G4double CellCentreY = WCIDRadius * cos(dPhi*facei);
 		
-		double verticalSpacingLAPPD	= mainAnnulusHeight/(WCLAPPDperCellVertical+1);
-		//G4cout<<"verticalSpacingLAPPD was: " << verticalSpacingLAPPD <<G4endl;
-		verticalSpacingLAPPD = 550;
-		//G4cout<<"verticalSpacingLAPPD now: " << verticalSpacingLAPPD <<G4endl;
 		for(G4double j = 0; j < WCLAPPDperCellVertical; j++){	// num LAPPD cols in the central ring
-	
-		//G4cout<< -mainAnnulusHeight/2. << " " << (j-1.)*verticalSpacingLAPPD<< G4endl;
-		G4ThreeVector LAPPDPosition = G4ThreeVector(CellCentreX, CellCentreY, -119.2+(j-1.)*verticalSpacingLAPPD);
-		if(CellCentreY > -100) continue;
-		if((facei == 4 && j == 0) || (facei == 4 && j == 2) || (facei == 3 && j == 1) || (facei == 5 && j == 1) ) continue;
 
-		//G4cout<< "Putting "<< facei<< "th LAPPD at "<<LAPPDPosition<<G4endl;
+		// only place an LAPPD in the slots listed in the detector config (WCLAPPDInstalledIDs)
+		int LAPPDID = (int)(j+facei*WCLAPPDperCellVertical);
+		if(std::find(WCLAPPDInstalledIDs.begin(), WCLAPPDInstalledIDs.end(), LAPPDID) == WCLAPPDInstalledIDs.end()) continue;
+
+		G4ThreeVector LAPPDPosition = G4ThreeVector(CellCentreX,
+													CellCentreY,
+													WCLAPPDCentreRowZ+(j-1.)*WCLAPPDVerticalSpacing);
 
 		G4VPhysicalVolume* physiWCBarrelLAPPD =
 		new G4PVPlacement(WCLAPPDRotationNext,                      // its rotation
@@ -343,7 +334,7 @@ G4LogicalVolume* WCSimDetectorConstruction::ConstructANNIECylinderScan()
 							"WCLAPPD",                              // its name
 							logicWCBarrel,                          // its mother volume
 							false,                                  // no boolean operations
-							(int)(j+facei*WCLAPPDperCellVertical),  // a unique copy number
+							LAPPDID,                                // a unique copy number
 							false);                                 // don't check overlaps
 		}
 	}
@@ -419,11 +410,12 @@ void WCSimDetectorConstruction::ConstructANNIECapsSheet(G4int zflip)
 		std::ifstream pmt_position_file("PMTPositions_Scan.txt");
 		std::string next_pmt;
 		double pmt_x, pmt_y, pmt_z, pmt_dirx, pmt_diry, pmt_dirz;
+		double pmt_tilt_angle;	// not used here, but the column must be read to stay aligned with the next line
 		double hole_x, hole_y, hole_z;
 		int panel_nr, pmt_type;
 		int HolderID;
 		while (!pmt_position_file.eof()){
-			pmt_position_file >> HolderID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type;
+			pmt_position_file >> HolderID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type >> pmt_tilt_angle;
 			if (pmt_position_file.eof()) break;
 			if (fabs(pmt_diry+1.) < 0.00001) {       //select only ETEL PMTs for the holders (pointing downwards)
 
@@ -567,11 +559,12 @@ void WCSimDetectorConstruction::ConstructANNIEHolders(){
 	std::ifstream pmt_position_file("PMTPositions_Scan.txt");
 	std::string next_pmt;
 	double pmt_x, pmt_y, pmt_z, pmt_dirx, pmt_diry, pmt_dirz;
+	double pmt_tilt_angle;	// not used here, but the column must be read to stay aligned with the next line
 	double holder_x, holder_y, holder_z;
 	int panel_nr, pmt_type;
 	int HolderID;
 	while (!pmt_position_file.eof()){
-		pmt_position_file >> HolderID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type;
+		pmt_position_file >> HolderID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type >> pmt_tilt_angle;
 		if (pmt_position_file.eof()) break;
 		//G4cout << "Read in PMT "<<HolderID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<G4endl;
 		
@@ -673,11 +666,12 @@ void WCSimDetectorConstruction::ConstructLUXETELHolders(){
 	std::ifstream pmt_position_file("PMTPositions_Scan.txt");
  	std::string next_pmt;
  	double pmt_x, pmt_y, pmt_z, pmt_dirx, pmt_diry, pmt_dirz;
+ 	double pmt_tilt_angle;	// not used here, but the column must be read to stay aligned with the next line
  	double holder_x, holder_y, holder_z;
  	int panel_nr, pmt_type;
  	int HolderID;
  	while (!pmt_position_file.eof()){
- 		pmt_position_file >> HolderID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type;
+ 		pmt_position_file >> HolderID >> panel_nr >> pmt_x >> pmt_y >> pmt_z >> pmt_dirx >> pmt_diry >> pmt_dirz >> pmt_type >> pmt_tilt_angle;
  		if (pmt_position_file.eof()) break;
  		//G4cout << "Read in PMT "<<HolderID<<", panel nr: "<<panel_nr<<", Position ("<<pmt_x<<","<<pmt_y<<","<<pmt_z<<"), PMT type: "<<pmt_type<<G4endl;
 
